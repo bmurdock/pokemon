@@ -4,6 +4,7 @@ const port = process.env.PORT || 8000;
 const pokeAPI = "https://pokeapi.co/api/v2/pokemon/";
 
 const app = express();
+app.use(express.static('public'));
 
 let pokemon;
 function getPokemon(req, res, next) {
@@ -37,16 +38,43 @@ app.get('/', function (req, res) {
         res.send('Invalid Pokemon');
         return;
     }
+    if (pokemon.types.length > 1) {
+        pokemon.types.sort((a, b) => {
+            return parseInt(a.type.slot) - parseInt(b.type.slot);
+        });
+    }
+
+    const types = pokemon.types.map((type) => {
+        return type.type.name;
+    });
+    let typeBlobs = '';
+    for (const type of types) {
+        typeBlobs += `<span class="${type}">${type}</span>`
+    }
 
     const body = `
-    <div>
-    <img src="${pokemon.sprites.front_default}">
-        <ul>Stats
-            <li>Name: ${pn(pokemon.name)}</li>
-            <li>Height: ${pokemon.height}</li>
-            <li>Weight: ${pokemon.weight}</li>
-        </ul>
-    </div>
+    <link rel="stylesheet" href="/css/base.css">
+    <section class="container">
+        <div class="card ${types[0]}">
+            <div class="overlay">
+                <h4>${pn(pokemon.name)}</h4>
+                <div class="imagePane">
+                    <img src="${pokemon.sprites.front_default}">
+                </div>
+                <h5>Types</h5>
+                <div class="pokeTypes">
+                    ${typeBlobs}
+                </div>
+                <ul>Stats
+                    <li>Height: ${pokemon.height}</li>
+                    <li>Weight: ${pokemon.weight}</li>
+                </ul>
+            </div>
+        </div>
+    
+        <button onclick="window.location.reload()">Refresh</button>
+
+    </section>
     `;
     res.send(body);
 });
@@ -57,11 +85,3 @@ app.listen(port, function (err) {
     }
     console.log(`Server is running at port ${port}`);
 });
-
-/*
-request(pokeAPI, function (err, res, body) {
-    console.log('err: ', err);
-    console.log('res: ', res);
-    console.log('body: ', body);
-});
-*/
